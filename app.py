@@ -181,3 +181,53 @@ def get_workflow_history():
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
+
+
+
+
+# Import batch generator
+from agents.batch_generator import BatchGeneratorAgent
+
+# Initialize batch generator agent
+batch_agent = BatchGeneratorAgent()
+
+# ==================== BATCH GENERATION ROUTES ====================
+
+@app.route('/api/bundles/generate', methods=['POST'])
+def generate_bundle():
+    """Generate a batch of themed images"""
+        try:
+                data = request.get_json()
+                        theme = data.get('theme')
+                                count = data.get('count', 50)
+                                        
+                                                if not theme:
+                                                            return jsonify({'error': 'Theme is required'}), 400
+                                                                    
+                                                                            # Generate batch
+                                                                                    result = batch_agent.generate_batch(theme, count)
+                                                                                            
+                                                                                                    return jsonify(result), 200 if result['status'] == 'success' else 400
+                                                                                                            
+                                                                                                                except Exception as e:
+                                                                                                                        logger.error(f"Error generating bundle: {str(e)}")
+                                                                                                                                return jsonify({'error': str(e)}), 500
+
+                                                                                                                                @app.route('/api/bundles/<batch_id>/status', methods=['GET'])
+                                                                                                                                def get_bundle_status(batch_id):
+                                                                                                                                    """Get status of a batch generation"""
+                                                                                                                                        try:
+                                                                                                                                                result = batch_agent.get_batch_status(batch_id)
+                                                                                                                                                        return jsonify(result), 200
+                                                                                                                                                            except Exception as e:
+                                                                                                                                                                    logger.error(f"Error getting bundle status: {str(e)}")
+                                                                                                                                                                            return jsonify({'error': str(e)}), 500
+
+                                                                                                                                                                            @app.route('/api/bundles/themes', methods=['GET'])
+                                                                                                                                                                            def get_available_themes():
+                                                                                                                                                                                """Get list of available bundle themes"""
+                                                                                                                                                                                    return jsonify({
+                                                                                                                                                                                            'themes': list(batch_agent.theme_templates.keys()),
+                                                                                                                                                                                                    'description': 'Available themes for bundle generation'
+                                                                                                                                                                                                        }), 200
+                                                                                                                                                                                                        
