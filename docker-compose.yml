@@ -1,0 +1,84 @@
+version: '3.9'
+
+services:
+  # Backend Flask API Service
+    backend:
+        build:
+              context: .
+                    dockerfile: Dockerfile
+                        container_name: artflow-backend
+                            ports:
+                                  - "5000:5000"
+                                      environment:
+                                            - FLASK_ENV=production
+                                                  - PYTHONUNBUFFERED=1
+                                                        - DEBUG=false
+                                                              # API Keys - Set these in .env or environment
+                                                                    - LEONARDO_API_KEY=${LEONARDO_API_KEY}
+                                                                          - ETSY_API_KEY=${ETSY_API_KEY}
+                                                                                - OPENAI_API_KEY=${OPENAI_API_KEY}
+                                                                                      # Database
+                                                                                            - DATABASE_URL=${DATABASE_URL:-sqlite:///artflow.db}
+                                                                                                volumes:
+                                                                                                      # Mount source code for development
+                                                                                                            - .:/app
+                                                                                                                  # Exclude virtual environment from sync
+                                                                                                                        - /app/venv
+                                                                                                                            working_dir: /app
+                                                                                                                                command: python app.py
+                                                                                                                                    healthcheck:
+                                                                                                                                          test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+                                                                                                                                                interval: 30s
+                                                                                                                                                      timeout: 10s
+                                                                                                                                                            retries: 3
+                                                                                                                                                                  start_period: 5s
+                                                                                                                                                                      restart: unless-stopped
+                                                                                                                                                                          networks:
+                                                                                                                                                                                - artflow-network
+                                                                                                                                                                                
+                                                                                                                                                                                  # Optional: PostgreSQL Database (for production)
+                                                                                                                                                                                    # Uncomment and configure to use PostgreSQL instead of SQLite
+                                                                                                                                                                                      # postgres:
+                                                                                                                                                                                        #   image: postgres:15-alpine
+                                                                                                                                                                                          #   container_name: artflow-postgres
+                                                                                                                                                                                            #   environment:
+                                                                                                                                                                                              #     POSTGRES_DB: artflow
+                                                                                                                                                                                                #     POSTGRES_USER: artflow_user
+                                                                                                                                                                                                  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+                                                                                                                                                                                                    #   ports:
+                                                                                                                                                                                                      #     - "5432:5432"
+                                                                                                                                                                                                        #   volumes:
+                                                                                                                                                                                                          #     - postgres_data:/var/lib/postgresql/data
+                                                                                                                                                                                                            #   healthcheck:
+                                                                                                                                                                                                              #     test: ["CMD-SHELL", "pg_isready -U artflow_user"]
+                                                                                                                                                                                                                #     interval: 10s
+                                                                                                                                                                                                                  #     timeout: 5s
+                                                                                                                                                                                                                    #     retries: 5
+                                                                                                                                                                                                                      #   networks:
+                                                                                                                                                                                                                        #     - artflow-network
+                                                                                                                                                                                                                        
+                                                                                                                                                                                                                          # Optional: Redis Cache (for session management and rate limiting)
+                                                                                                                                                                                                                            # Uncomment to enable caching
+                                                                                                                                                                                                                              # redis:
+                                                                                                                                                                                                                                #   image: redis:7-alpine
+                                                                                                                                                                                                                                  #   container_name: artflow-redis
+                                                                                                                                                                                                                                    #   ports:
+                                                                                                                                                                                                                                      #     - "6379:6379"
+                                                                                                                                                                                                                                        #   command: redis-server --appendonly yes
+                                                                                                                                                                                                                                          #   volumes:
+                                                                                                                                                                                                                                            #     - redis_data:/data
+                                                                                                                                                                                                                                              #   healthcheck:
+                                                                                                                                                                                                                                                #     test: ["CMD", "redis-cli", "ping"]
+                                                                                                                                                                                                                                                  #     interval: 10s
+                                                                                                                                                                                                                                                    #     timeout: 5s
+                                                                                                                                                                                                                                                      #     retries: 5
+                                                                                                                                                                                                                                                        #   networks:
+                                                                                                                                                                                                                                                          #     - artflow-network
+                                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                          volumes:
+                                                                                                                                                                                                                                                            # postgres_data:
+                                                                                                                                                                                                                                                              # redis_data:
+                                                                                                                                                                                                                                                              
+                                                                                                                                                                                                                                                              networks:
+                                                                                                                                                                                                                                                                artflow-network:
+                                                                                                                                                                                                                                                                    driver: bridge
